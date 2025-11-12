@@ -65,27 +65,41 @@ def news_delete(id):
 @login_required
 def news_ready(id):
     form = NewsForm()
+    db_sess = db_session.create_session()
+    news = db_sess.query(News).filter(News.user == current_user).all()
     if request.method == "GET":
-        db_sess = db_session.create_session()
-        news = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
-        if news:
-            form.title.data = news.title
-            form.content.data = news.content
-            form.is_ready = True
+        news_item = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
+        if news_item:
+            news_item.is_ready = True
+            db_sess.commit()
         else:
             abort(404)
-    return render_template('ready.html', form=form)
+    return render_template('ready.html', form=form, news=news)
 
-'''@app.route('/ready', methods=['GET', 'POST'])
+
+@app.route('/news_not_ready/<int:id>', methods=['GET', 'POST'])
 @login_required
-def ready(id):
+def news_not_ready(id):
+    form = NewsForm()
     db_sess = db_session.create_session()
-    news = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
-    if news:
-        current_user.news.append(news)
-        db_sess.merge(current_user)
-        db_sess.commit()
-    return render_template('ready.html')'''
+    news = db_sess.query(News).filter(News.user == current_user).all()
+    if request.method == "GET":
+        news_item = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
+        if news_item:
+            news_item.is_ready = False
+            db_sess.commit()
+        else:
+            abort(404)
+    return render_template('ready.html', form=form, news=news)
+
+
+@app.route('/ready', methods=['GET', 'POST'])
+@login_required
+def ready():
+    db_sess = db_session.create_session()
+    news = db_sess.query(News).filter(News.user == current_user, News.is_ready == True).all()
+    form = NewsForm()
+    return render_template('ready.html', news=news, form=form)
 
 
 @app.route('/news/<int:id>', methods=['GET', 'POST'])
