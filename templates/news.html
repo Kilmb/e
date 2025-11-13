@@ -22,8 +22,21 @@
                 </p>
             {% endfor %}
         </p>
+        <p>
+    {{ form.category_name.label }}<br>
+    {{ form.category_name(class="form-control", list="categories") }}<br>
+    <datalist id="categories">
+        {% for cat in existing_categories %}
+            <option value="{{ cat }}">
+        {% endfor %}
+    </datalist>
+    {% for error in form.category_name.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+    {% endfor %}
+</p>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         {{ message }}
     </form>
-<p>{{ form.is_private() }} {{ form.is_private.label }}</p>
 {% endblock %}

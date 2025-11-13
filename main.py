@@ -6,7 +6,6 @@ from forms.user import RegisterForm, LoginForm
 from data.news import News
 from data.users import User
 from data import db_session
-from data.themes import Themes
 from data.category import Category
 
 app = Flask(__name__)
@@ -38,21 +37,31 @@ def main():
 def add_news():
     form = NewsForm()
     db_sess = db_session.create_session()
-    all_themes = db_sess.query(Themes).all()
+
+    existing_categories = db_sess.query(Category).all()
+    category_names = [c.name for c in existing_categories]
+
     if form.validate_on_submit():
         news = News()
         news.title = form.title.data
         news.content = form.content.data
-        if form.theme_id.data:
-            theme = db_sess.query(Themes).get(form.theme_id.data)
-            if theme and theme.category:
-                news.categories.append(theme.category)
+        news.is_private = form.is_private.data
+
+        if form.category_name.data:
+            category_name = form.category_name.data.strip()
+            category = db_sess.query(Category).filter(Category.name == category_name).first()
+            if not category:
+                category = Category(name=category_name)
+                db_sess.add(category)
+                db_sess.commit()
+            news.category_id = category.id
 
         current_user.news.append(news)
         db_sess.merge(current_user)
         db_sess.commit()
         return redirect('/')
-    return render_template('news.html', title='Добавление новости', form=form, themes=all_themes)
+
+    return render_template('news.html', title='Добавление новости', form=form, existing_categories=category_names)
 
 
 @app.route('/news_delete/<int:id>', methods=['GET', 'POST'])
@@ -73,7 +82,7 @@ def news_delete(id):
 def news_ready(id):
     form = NewsForm()
     db_sess = db_session.create_session()
-    news = db_sess.query(News).filter(News.user == current_user).all()
+
     if request.method == "GET":
         news_item = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
         if news_item:
@@ -81,16 +90,8 @@ def news_ready(id):
             db_sess.commit()
         else:
             abort(404)
-    return render_template('ready.html', form=form, news=news)
 
-
-@app.route('/ready', methods=['GET', 'POST'])
-@login_required
-def ready():
-    db_sess = db_session.create_session()
-    news = db_sess.query(News).filter(News.user == current_user, News.is_ready == True).all()
-    form = NewsForm()
-    return render_template('ready.html', news=news, form=form)
+    return render_template('ready.html')
 
 
 @app.route('/news_not_ready/<int:id>', methods=['GET', 'POST'])
@@ -106,7 +107,7 @@ def news_not_ready(id):
             db_sess.commit()
         else:
             abort(404)
-    return render_template('base.html', form=form, news=news)
+    return render_template('index.html', form=form, news=news)
 
 
 @app.route('/not_ready', methods=['GET', 'POST'])
@@ -115,70 +116,31 @@ def not_ready():
     db_sess = db_session.create_session()
     news = db_sess.query(News).filter(News.user == current_user, News.is_ready != True).all()
     form = NewsForm()
-    return render_template('base.html', news=news, form=form)
+    return render_template('index.html', news=news, form=form)
 
 
-@app.route('/add_theme', methods=['GET', 'POST'])
+@app.route('/ready')
 @login_required
-def add_theme():
+def ready():
     db_sess = db_session.create_session()
-    user_categories = db_sess.query(Category).filter(Category.user == current_user).all()
-    if request.method == "POST":
-        theme_name = request.form['theme_name']
-        category_id = request.form['category_id']
-        if theme_name and category_id:
-            new_theme = Themes(name=theme_name, category_id=category_id)
-            db_sess.add(new_theme)
-            db_sess.commit()
-            return redirect('/themes')
-
-    return render_template('add_theme.html', categories=user_categories)
-
-
-@app.route('/themes', methods=['GET', 'POST'])
-@login_required
-def show_themes():
-    db_sess = db_session.create_session()
-    all_themes = db_sess.query(Themes).all()
-    return render_template('themes.html', themes=all_themes)
-
-
-@app.route('/add_category', methods=['GET', 'POST'])
-@login_required
-def add_category():
-    if request.method == "POST":
-        category_name = request.form['category_name']
-        if category_name:
-            db_sess = db_session.create_session()
-            new_category = Category(name=category_name, user_id=current_user.id)
-            db_sess.add(new_category)
-            db_sess.commit()
-            return redirect('/my_categories')
-
-    return render_template('add_category.html')
-
-
-@app.route('/my_categories', methods=['GET', 'POST'])
-@login_required
-def my_categories():
-    db_sess = db_session.create_session()
-    categories = db_sess.query(Category).filter(Category.user == current_user).all()
-    return render_template('themes.html', categories=categories)
+    news = db_sess.query(News).filter(News.user == current_user, News.is_ready == True).all()
+    return render_template('ready.html', news=news)
 
 
 @app.route('/news/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_news(id):
     form = NewsForm()
-    db_sess = db_session.create_session()
-    all_themes = db_sess.query(Themes).all()
     if request.method == "GET":
+        db_sess = db_session.create_session()
         news = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
         if news:
             form.title.data = news.title
             form.content.data = news.content
-            form.is_private.data = True
-            form.is_ready.data = news.is_ready.data
+            form.is_private.data = news.is_private
+            form.is_ready.data = news.is_ready
+            if news.category:
+                form.category_name.data = news.category.name
         else:
             abort(404)
     if form.validate_on_submit():
@@ -187,11 +149,23 @@ def edit_news(id):
         if news:
             news.title = form.title.data
             news.content = form.content.data
+            news.is_private = form.is_private.data
+
+            if form.category_name.data:
+                category = db_sess.query(Category).filter(Category.name == form.category_name.data).first()
+                if not category:
+                    category = Category(name=form.category_name.data)
+                    db_sess.add(category)
+                    db_sess.commit()
+                news.category_id = category.id
+            else:
+                news.category_id = None
+
             db_sess.commit()
             return redirect('/')
         else:
             abort(404)
-    return render_template('news.html', title='Редактирование новости', form=form, themes=all_themes)
+    return render_template('news.html', title='Редактирование новости', form=form)
 
 
 @app.route("/")

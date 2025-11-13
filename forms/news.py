@@ -9,4 +9,4 @@ class NewsForm(FlaskForm):
     is_private = BooleanField("Личное")
     submit = SubmitField('Применить')
     is_ready = BooleanField("Сделано")
-    theme_id = SelectField('Тема', choices=[], coerce=int)
+    category_name = StringField('Категория (введите название или выберите из существующих)')
