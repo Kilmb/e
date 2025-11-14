@@ -82,7 +82,7 @@ def news_delete(id):
 def news_ready(id):
     form = NewsForm()
     db_sess = db_session.create_session()
-
+    news = db_sess.query(News).filter(News.user == current_user).all()
     if request.method == "GET":
         news_item = db_sess.query(News).filter(News.id == id, News.user == current_user).first()
         if news_item:
@@ -90,8 +90,16 @@ def news_ready(id):
             db_sess.commit()
         else:
             abort(404)
+    return render_template('ready.html', form=form, news=news)
 
-    return render_template('ready.html')
+
+@app.route('/ready', methods=['GET', 'POST'])
+@login_required
+def ready():
+    form = NewsForm()
+    db_sess = db_session.create_session()
+    news = db_sess.query(News).filter(News.user == current_user, News.is_ready == True).all()
+    return render_template('ready.html', news=news, form=form)
 
 
 @app.route('/news_not_ready/<int:id>', methods=['GET', 'POST'])
@@ -108,23 +116,6 @@ def news_not_ready(id):
         else:
             abort(404)
     return render_template('index.html', form=form, news=news)
-
-
-@app.route('/not_ready', methods=['GET', 'POST'])
-@login_required
-def not_ready():
-    db_sess = db_session.create_session()
-    news = db_sess.query(News).filter(News.user == current_user, News.is_ready != True).all()
-    form = NewsForm()
-    return render_template('index.html', news=news, form=form)
-
-
-@app.route('/ready')
-@login_required
-def ready():
-    db_sess = db_session.create_session()
-    news = db_sess.query(News).filter(News.user == current_user, News.is_ready == True).all()
-    return render_template('ready.html', news=news)
 
 
 @app.route('/news/<int:id>', methods=['GET', 'POST'])
@@ -172,7 +163,7 @@ def edit_news(id):
 def index():
     db_sess = db_session.create_session()
     if current_user.is_authenticated:
-        news = db_sess.query(News).filter((News.user == current_user) | (News.is_private == True))
+        news = db_sess.query(News).filter(News.user == current_user, News.is_ready != True)
     else:
         news = db_sess.query(News).filter(News.is_private == True)
     return render_template("index.html", news=news)

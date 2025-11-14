@@ -6,6 +6,7 @@
         <a href="news" class="btn btn-secondary">Добавить задачу</a>
     {% endif %}
     {% for item in news %}
+        {% if not item.is_ready %}
         <div class="col-md6 border rounded">
             <h2>{{ item.title }}</h2>
             <div>
@@ -25,5 +26,6 @@
                 </div>
             {% endif %}
         </div>
+    {% endif %}
     {% endfor %}
 {% endblock %}
