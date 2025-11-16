@@ -4,28 +4,57 @@
     <h1>Заметки</h1>
     {% if current_user.is_authenticated %}
         <a href="news" class="btn btn-secondary">Добавить задачу</a>
+    <form method="GET" action="" class="mb-3">
+        <label for="categoryFilter" class="form-label">Фильтр по категориям:</label>
+        <select id="categoryFilter" name="category" class="form-select" style="max-width: 300px;" onchange="this.form.submit()">
+            <option value="all">Все категории</option>
+            {% for category in categories %}
+                <option value="{{ category.name }}" {% if selected_category == category.name %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+            {% endfor %}
+            <option value="no_category" {% if selected_category =='no_category' %}selected{% endif %}>
+                Без категории
+            </option>
+        </select>
+    </form>
     {% endif %}
+
     {% for item in news %}
-        {% if not item.is_ready %}
         <div class="col-md6 border rounded">
             <h2>{{ item.title }}</h2>
             <div>
                 {{ item.content }}
             </div>
+
+            {% if item.file_name %}
+                {% if item.file_name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.doc', '.docx', '.zip')) %}
+                    <img src="/file/{{ item.id }}" style="max-width: 300px; margin: 5px 0;">
+                {% endif %}
+
+                <a href="/file/{{ item.id }}">
+                    Прикрепленный файл: {{ item.file_name }}
+                </a>
+            {% endif %}
+
             <div>
-                Категория: {{ item.category.name if item.category else 'Без категории' }}
+                Категория:
+                <span>{{ item.category.name if item.category else 'Без категории' }}</span>
             </div>
+
             <div>
                 Дата написания - {{ item.created_date }}
             </div>
-            {% if current_user.is_authenticated and current_user == item.user %}
+            {% if item.due_date %}
+    <small class="text-muted">Срок: {{ item.due_date.strftime('%d.%m.%Y') }}</small>
+{% endif %}
+            {% if current_user.is_authenticated and current_user.id == item.user_id %}
                 <div>
-                    <a href="/news/{{ item.id }}" class="btn btn-warning">Изменить</a>
-                    <a href="/news_ready/{{ item.id }}" class="btn btn-success">Сделано</a>
+                    <a href="/news/{{ item.id }}" class="btn btn-warning">Редактировать</a>
+                    <a href="/news_ready/{{ item.id }}" class="btn btn-success">Выполнено</a>
                     <a href="/news_delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
                 </div>
             {% endif %}
         </div>
-    {% endif %}
     {% endfor %}
 {% endblock %}

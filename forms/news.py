@@ -1,6 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, BooleanField, SubmitField, SelectField
-from wtforms.validators import DataRequired
+from flask_wtf.file import FileField
+from wtforms import StringField, TextAreaField, BooleanField, SubmitField
+from wtforms.validators import DataRequired, Optional
+from wtforms.fields import DateField
 
 
 class NewsForm(FlaskForm):
@@ -10,3 +12,5 @@ class NewsForm(FlaskForm):
     submit = SubmitField('Применить')
     is_ready = BooleanField("Сделано")
     category_name = StringField('Категория (введите название или выберите из существующих)')
+    file = FileField('Прикрепить файл')
+    due_date = DateField('Срок выполнения', validators=[Optional()])

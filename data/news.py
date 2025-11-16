@@ -19,3 +19,5 @@ class News(SqlAlchemyBase):
     user = orm.relationship('User')
     category_id = sqlalchemy.Column(sqlalchemy.Integer, sqlalchemy.ForeignKey("category.id"))
     category = orm.relationship('Category')
+    file_name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    due_date = sqlalchemy.Column(sqlalchemy.Date, nullable=True)

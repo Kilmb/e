@@ -2,27 +2,51 @@
 
 {% block content %}
     <h1>Выполненные задачи</h1>
-    {% if current_user.is_authenticated %}
-        <a href="news" class="btn btn-secondary">Добавить задачу</a>
-    {% endif %}
-    <a href="/" class="btn btn-danger">Выйти</a>
+    <a href="/" class="btn btn-danger">Вернуться к задачам</a>
+
+    <form method="GET" action="" class="mb-3">
+        <label for="categoryFilter" class="form-label">Фильтр по категориям:</label>
+        <select id="categoryFilter" name="category" class="form-select" onchange="this.form.submit()">
+            <option value="all">Все категории</option>
+            {% for category in categories %}
+                <option value="{{ category.name }}" {% if selected_category == category.name %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+            {% endfor %}
+            <option value="no_category" {% if selected_category =='no_category' %}selected{% endif %}>
+                Без категории
+            </option>
+        </select>
+    </form>
+
     {% for item in news %}
-        {% if item.is_ready %}
         <div class="col-md6 border rounded">
             <h2>{{ item.title }}</h2>
             <div>
                 {{ item.content }}
             </div>
+
+            {% if item.file_name %}
+                {% if item.file_name.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.doc', '.docx', '.zip')) %}
+                    <img src="/file/{{ item.id }}">
+                {% endif %}
+
+                <a href="/file/{{ item.id }}">
+                    Прикрепленный файл: {{ item.file_name }}
+                </a>
+            {% endif %}
+
+            <div>
+                Категория:
+                <span>{{ item.category.name if item.category else 'Без категории' }}</span>
+            </div>
             <div>
                 Дата написания - {{ item.created_date }}
             </div>
-            {% if current_user.is_authenticated and current_user == item.user %}
-                <div>
-                    <a href="/news_delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
-                    <a href="/news_not_ready/{{ item.id }}" class="btn btn-warning">Вернуть в задачи</a>
-                </div>
-            {% endif %}
+            <div>
+                <a href="/news_not_ready/{{ item.id }}" class="btn btn-warning">Вернуть в задачи</a>
+                <a href="/news_delete/{{ item.id }}" class="btn btn-danger">Удалить</a>
+            </div>
         </div>
-        {% endif %}
     {% endfor %}
 {% endblock %}

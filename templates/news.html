@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Добавление задачу</h1>
-    <form action="" method="post">
+    <h1>Добавление задачи</h1>
+    <form action="" method="post" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
         <p>
             {{ form.title.label }}<br>
@@ -17,24 +17,27 @@
             {{ form.content.label }}<br>
             {{ form.content(class="form-control") }}<br>
             {% for error in form.content.errors %}
-                <p content="alert alert-danger" role="alert">
+                <p class="alert alert-danger" role="alert">
                     {{ error }}
                 </p>
             {% endfor %}
         </p>
         <p>
-    {{ form.category_name.label }}<br>
-    {{ form.category_name(class="form-control", list="categories") }}<br>
-    <datalist id="categories">
-        {% for cat in existing_categories %}
-            <option value="{{ cat }}">
-        {% endfor %}
-    </datalist>
-    {% for error in form.category_name.errors %}
-        <p class="alert alert-danger" role="alert">
-            {{ error }}
+            {{ form.category_name.label }}<br>
+            {{ form.category_name(class="form-control", list="categories") }}<br>
+            <datalist id="categories">
+                {% for cat in existing_categories %}
+                    <option value="{{ cat }}">
+                {% endfor %}
+            </datalist>
         </p>
-    {% endfor %}
+        <p>
+            {{ form.file.label }}<br>
+            {{ form.file(class="form-control") }}<br>
+        </p>
+        <p>
+    {{ form.due_date.label }}<br>
+    {{ form.due_date(class="form-control") }}
 </p>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         {{ message }}
