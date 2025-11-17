@@ -156,7 +156,7 @@ def news_ready(id):
         abort(404)
 
     db_sess.close()
-    return redirect('ready')
+    return redirect('/ready')
 
 
 @app.route('/ready', methods=['GET'])
